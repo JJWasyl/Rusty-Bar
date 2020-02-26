@@ -1,6 +1,11 @@
 # Rusty-Bar
 ## A terminal bar graph plotting library for Rust
 
+### Authors
+* Jakub Wasylkowski: JJWasyl
+* Zhouxiyu Jian: ZhouxiyuJiang
+* Leon Davis: leondavis1
+
 ### Goal
 Implement a library for plotting static and dynamic graphs to the terminal. The plotter takes in data from various sources such as: Maps, array slices, vectors, files or data streams.
 
