@@ -1,5 +1,4 @@
-use crossterm::style::Color;
+use super::static_plot;
 
-pub struct GraphBuilder {
-    colors: Vec<Color>,
-}
+pub mod dynamic_graph_builder;
+pub mod static_graph_builder;
