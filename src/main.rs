@@ -11,5 +11,5 @@ fn main() {
     let columns: &[&str] = &[&"Boys", &"Girls", &"Neuters"];
     let cp: Vec<Color> = vec![Color::Red, Color::Cyan, Color::White, Color::Green];
     let plotter = StaticPlot::new(data, labels, columns, false,  true, cp);
-    plotter.print_static(std::io::stdout());
+    plotter.print_static();
 }
