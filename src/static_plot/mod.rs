@@ -4,6 +4,7 @@ use crossterm::{
 };
 use std::io::{stdout, Write};
 
+#[derive(Default)]
 pub struct StaticPlot<'a> {
     data: &'a[&'a[u32]],
     labels: &'a[&'a str],

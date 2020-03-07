@@ -10,6 +10,7 @@ pub struct StaticGraphBuilder<'a> {
     show_col_labels: bool,
     show_legend: bool,
     color_palette: Vec<Color>,
+    last_plot: StaticPlot<'a>
 }
 
 impl<'a> StaticGraphBuilder<'a> {
@@ -51,8 +52,10 @@ impl<'a> StaticGraphBuilder<'a> {
         todo!();
     }
 
-    pub fn load_2d_array(&'a mut self, array: &'a[&'a[u32]]) -> &'a Self {
+    pub fn load_2d_array(&'a mut self, array: &'a[&'a[u32]], labels: &'a[&'a str], col_labels: &'a[&'a str]) -> &'a Self {
         self.data = array;
+        self.labels = labels;
+        self.col_labels = col_labels;
         self
     }
 
