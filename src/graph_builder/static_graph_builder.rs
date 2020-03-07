@@ -10,7 +10,6 @@ pub struct StaticGraphBuilder<'a> {
     show_col_labels: bool,
     show_legend: bool,
     color_palette: Vec<Color>,
-    last_plot: StaticPlot<'a>
 }
 
 impl<'a> StaticGraphBuilder<'a> {
@@ -18,23 +17,32 @@ impl<'a> StaticGraphBuilder<'a> {
         StaticGraphBuilder::default()
     }
 
-    pub fn build() -> StaticPlot<'a> {
-        todo!();
+    pub fn build(&'a self) -> StaticPlot<'a> {
+        StaticPlot::new(
+            self.data,
+            self.labels,
+            self.col_labels,
+            false,
+            false,
+            vec![Color::White],
+        )
     }
 
     pub fn set_colors(&'a mut self, colors: &'a[&'a str]) -> &'a Self {
+        let mut color_palette: Vec<Color> = vec![];
         for &c in colors {
             match c {
-                "red" => self.color_palette.push(Color::Red),
-                "green" => self.color_palette.push(Color::Green),
-                "yellow" => self.color_palette.push(Color::Yellow),
-                "blue" => self.color_palette.push(Color::Blue),
-                "magenta" => self.color_palette.push(Color::Magenta),
-                "cyan" => self.color_palette.push(Color::Cyan),
-                "white" => self.color_palette.push(Color::White),
+                "red" => color_palette.push(Color::Red),
+                "green" => color_palette.push(Color::Green),
+                "yellow" => color_palette.push(Color::Yellow),
+                "blue" => color_palette.push(Color::Blue),
+                "magenta" => color_palette.push(Color::Magenta),
+                "cyan" => color_palette.push(Color::Cyan),
+                "white" => color_palette.push(Color::White),
                 _ => ()
             }
         }
+        self.color_palette = color_palette;
         self
     }
 
@@ -59,15 +67,16 @@ impl<'a> StaticGraphBuilder<'a> {
         self
     }
 
-    pub fn load_1d_array(&'a mut self, array: &'a[u32]) -> &'a Self {
-        todo!();
+    //difficult part
+    pub fn load_1d_array(&'a mut self, array: &'a [u32], label: &'a str) -> &'a Self {
+        let mut new_data: Vec<&'a[u32]> = Vec::with_capacity(array.len());
+        new_data.push(array);
+        //self.data = new_data;
+        self
     }
 
-    pub fn plot_static() -> &'a Self {
-        todo!();
-    }
-
-    pub fn plot_dynamic() -> &'a Self {
-        todo!();
+    pub fn plot_static(&'a self) -> &'a Self {
+        
+        self
     }
 }
