@@ -22,13 +22,13 @@ impl<'a> StaticGraphBuilder<'a> {
             self.data,
             self.labels,
             self.col_labels,
-            false,
-            false,
-            vec![Color::White],
+            self.show_col_labels,
+            self.show_legend,
+            self.color_palette.to_owned(),
         )
     }
 
-    pub fn set_colors(&'a mut self, colors: &'a[&'a str]) -> &'a Self {
+    pub fn set_colors(&'a mut self, colors: &'a[&'a str]) -> &'a mut Self {
         let mut color_palette: Vec<Color> = vec![];
         for &c in colors {
             match c {
@@ -46,21 +46,21 @@ impl<'a> StaticGraphBuilder<'a> {
         self
     }
 
-    pub fn show_legend(&'a mut self, visible: bool) ->  &'a Self {
+    pub fn view_legend(&'a mut self, visible: bool) ->  &'a mut Self {
         self.show_legend = visible;
         self
     }
 
-    pub  fn show_col_labels(&'a mut self, visible: bool) ->  &'a Self {
+    pub fn view_col_labels(&'a mut self, visible: bool) ->  &'a mut Self {
         self.show_col_labels = visible;
         self
     }
 
-    pub fn load_hashmap(&'a mut self, map: HashMap<&'a str, &'a [u32]>) -> &'a Self {
+    pub fn load_hashmap(&'a mut self, map: HashMap<&'a str, &'a [u32]>) -> &'a mut Self {
         todo!();
     }
 
-    pub fn load_2d_array(&'a mut self, array: &'a[&'a[u32]], labels: &'a[&'a str], col_labels: &'a[&'a str]) -> &'a Self {
+    pub fn load_2d_array(&'a mut self, array: &'a[&'a[u32]], labels: &'a[&'a str], col_labels: &'a[&'a str]) -> &'a mut Self {
         self.data = array;
         self.labels = labels;
         self.col_labels = col_labels;
@@ -68,15 +68,10 @@ impl<'a> StaticGraphBuilder<'a> {
     }
 
     //difficult part
-    pub fn load_1d_array(&'a mut self, array: &'a [u32], label: &'a str) -> &'a Self {
+    pub fn load_1d_array(&'a mut self, array: &'a [u32], label: &'a str) -> &'a mut Self {
         let mut new_data: Vec<&'a[u32]> = Vec::with_capacity(array.len());
         new_data.push(array);
         //self.data = new_data;
-        self
-    }
-
-    pub fn plot_static(&'a self) -> &'a Self {
-        
         self
     }
 }

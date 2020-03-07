@@ -96,7 +96,6 @@ impl<'a> StaticPlot<'a> {
                 stdout(),
                 Print("\n"),
                 cursor::RestorePosition,
-                cursor::MoveDown(1),
             )
             .unwrap();
         }
