@@ -1,37 +1,40 @@
 use crossterm::{
     cursor, execute,
-    style::{Color, Print, ResetColor, SetForegroundColor}
+    style::{Color, Print, ResetColor, SetForegroundColor},
 };
-use std::io::{stdout, Write};
 use std::collections::HashMap;
+use std::io::{stdout, Write};
 
 #[derive(Default)]
 pub struct StaticGraphBuilder<'a> {
-    data: &'a[&'a[u32]],
-    labels: &'a[&'a str],
-    col_labels: &'a[&'a str],
+    data: &'a [&'a [u32]],
+    labels: &'a [&'a str],
+    col_labels: &'a [&'a str],
     show_col_labels: bool,
     show_legend: bool,
     color_palette: Vec<Color>,
+    width: usize,
 }
 
 impl<'a> StaticGraphBuilder<'a> {
     pub fn new() -> StaticGraphBuilder<'a> {
-        StaticGraphBuilder::default()
+        let builder = StaticGraphBuilder::default();
+        builder.set_width(crossterm::terminal::size().unwrap().0 as usize)
     }
 
     pub fn build(self) -> StaticPlot<'a> {
-        StaticPlot{
+        StaticPlot {
             data: self.data,
-            labels:  self.labels,
-            col_labels:  self.col_labels,
-            show_col_labels:  self.show_col_labels,
-            show_legend:  self.show_legend,
-            color_palette:  self.color_palette.to_owned()
+            labels: self.labels,
+            col_labels: self.col_labels,
+            width: self.width as u16,
+            show_col_labels: self.show_col_labels,
+            show_legend: self.show_legend,
+            color_palette: self.color_palette.to_owned(),
         }
     }
 
-    pub fn set_colors(mut self, colors: &'a[&'a str]) -> Self {
+    pub fn set_colors(mut self, colors: &'a [&'a str]) -> Self {
         let mut color_palette: Vec<Color> = vec![];
         for &c in colors {
             match c {
@@ -42,20 +45,25 @@ impl<'a> StaticGraphBuilder<'a> {
                 "magenta" => color_palette.push(Color::Magenta),
                 "cyan" => color_palette.push(Color::Cyan),
                 "white" => color_palette.push(Color::White),
-                _ => ()
+                _ => (),
             }
         }
         self.color_palette = color_palette;
         self
     }
 
-    pub fn view_legend(mut self, visible: bool) ->  Self {
+    pub fn view_legend(mut self, visible: bool) -> Self {
         self.show_legend = visible;
         self
     }
 
-    pub fn view_col_labels(mut self, visible: bool) ->  Self {
+    pub fn view_col_labels(mut self, visible: bool) -> Self {
         self.show_col_labels = visible;
+        self
+    }
+
+    pub fn set_width(mut self, width: usize) -> Self {
+        self.width = width;
         self
     }
 
@@ -63,7 +71,12 @@ impl<'a> StaticGraphBuilder<'a> {
         todo!();
     }
 
-    pub fn load_2d_array(mut self, array: &'a[&'a[u32]], labels: &'a[&'a str], col_labels: &'a[&'a str]) -> Self {
+    pub fn load_2d_array(
+        mut self,
+        array: &'a [&'a [u32]],
+        labels: &'a [&'a str],
+        col_labels: &'a [&'a str],
+    ) -> Self {
         self.data = array;
         self.labels = labels;
         self.col_labels = col_labels;
@@ -71,8 +84,8 @@ impl<'a> StaticGraphBuilder<'a> {
     }
 
     //difficult part
-    pub fn load_1d_array(mut self, array: &'a [u32], label: &'a str) -> Self {
-        let mut new_data: Vec<&'a[u32]> = Vec::with_capacity(array.len());
+    pub fn load_1d_array(&'a mut self, array: &'a [u32], label: &'a str) -> &'a mut Self {
+        let mut new_data: Vec<&'a [u32]> = Vec::with_capacity(array.len());
         new_data.push(array);
         //self.data = new_data;
         self
@@ -80,9 +93,10 @@ impl<'a> StaticGraphBuilder<'a> {
 }
 
 pub struct StaticPlot<'a> {
-    data: &'a[&'a[u32]],
-    labels: &'a[&'a str],
-    col_labels: &'a[&'a str],
+    data: &'a [&'a [u32]],
+    labels: &'a [&'a str],
+    col_labels: &'a [&'a str],
+    width: u16,
     show_col_labels: bool,
     show_legend: bool,
     color_palette: Vec<Color>,
@@ -107,17 +121,20 @@ impl<'a> StaticPlot<'a> {
     //     }
     // }
 
-    pub fn refresh_data(&mut self, new_data: &'a[&'a[u32]]) {
+    pub fn refresh_data(&mut self, new_data: &'a [&'a [u32]]) {
         self.data = new_data;
+        self.reset_cursor(self.get_graph_height() + 1);
         self.print_static();
     }
 
     pub fn print_static(&self) {
+        self.clear_space();
         let mut max_lab = 0;
         let mut max_col = 0;
 
         let mut cp_iter = self.color_palette.iter().cycle();
-        self.labels.into_iter()
+        self.labels
+            .into_iter()
             .for_each(|s| max_lab = if s.len() > max_lab { s.len() } else { max_lab });
         self.col_labels
             .into_iter()
@@ -136,7 +153,7 @@ impl<'a> StaticPlot<'a> {
                     Print(self.generate_bar(1) + &" ".repeat(4)),
                     ResetColor
                 )
-                    .unwrap()
+                .unwrap()
             }
             execute!(stdout(), Print("\n"),).unwrap();
         }
@@ -150,6 +167,33 @@ impl<'a> StaticPlot<'a> {
         }
     }
 
+    fn get_graph_height(&self) -> u16 {
+        let mut height = self.data[0].len() * self.data.len();
+        if self.show_legend == true {
+            height += 1;
+        }
+        height as u16
+    }
+
+    fn clear_space(&self) {
+        let height = self.get_graph_height();
+        for _ in 0..height {
+            execute!(
+                stdout(),
+                Print(" ".repeat(self.width as usize)),
+                Print("\n")
+            ).unwrap();
+        }
+        self.reset_cursor(height as u16);
+    }
+
+    fn reset_cursor(&self, height: u16) {
+        execute!(
+            stdout(),
+            cursor::MoveToPreviousLine(height),
+        ).unwrap();
+    }
+
     fn print_label_group(
         &self,
         label: &str,
@@ -161,18 +205,24 @@ impl<'a> StaticPlot<'a> {
             self.print_label(&self.norm_label(label, max_label_len), Color::White);
         }
         let mut cp_iter = self.color_palette.iter().cycle();
+
+        let max_val = self.find_max_val();
+        let draw_width = self.normalize_draw_space(max_label_len, max_col_len, max_val);
+
         for i in 0..self.data[row_idx].len() {
             execute!(stdout(), cursor::SavePosition,).unwrap();
             if self.show_col_labels {
-                self.print_label(&self.norm_label(self.col_labels[i], max_col_len), Color::White);
+                self.print_label(
+                    &self.norm_label(self.col_labels[i], max_col_len),
+                    Color::White,
+                );
             }
-            self.print_bar(self.data[row_idx][i], *cp_iter.next().unwrap());
-            execute!(
-                stdout(),
-                Print("\n"),
-                cursor::RestorePosition,
-            )
-                .unwrap();
+            self.print_bar(self.data[row_idx][i], *cp_iter.next().unwrap(), draw_width, max_val);
+            execute!(stdout(),
+                    Print("\n"),
+                    cursor::RestorePosition,
+                    cursor::MoveDown(1)
+            ).unwrap();
         }
         execute!(stdout(), cursor::MoveToNextLine(0)).unwrap();
     }
@@ -189,18 +239,22 @@ impl<'a> StaticPlot<'a> {
             Print(": "),
             ResetColor,
         )
-            .unwrap();
+        .unwrap();
     }
 
-    fn print_bar(&self, size: u32, color: Color) {
+    fn print_bar(&self, size: u32, color: Color, draw_width: u32, max_val: u32) {
+        let mut draw_size: u32 = size;
+        if max_val > draw_width {
+            draw_size = draw_size*draw_width / max_val;
+        }
         execute!(
             stdout(),
             SetForegroundColor(color),
-            Print(self.generate_bar(size)),
+            Print(self.generate_bar(draw_size)),
             Print(format!(" {}", size)),
             ResetColor
         )
-            .unwrap();
+        .unwrap();
     }
 
     fn generate_bar(&self, amount: u32) -> String {
@@ -211,4 +265,23 @@ impl<'a> StaticPlot<'a> {
         result
     }
 
+    fn find_max_val(&self) -> u32 {
+        let mut max = 0;
+        for &row in self.data {
+            for &val in row {
+                if val > max {
+                    max = val;
+                }
+            }
+        }
+        max
+    }
+
+    fn normalize_draw_space(&self, max_label_len: usize, max_col_len: usize, max_val: u32) -> u32 {
+        let mut reserve_space: u32 = (max_label_len + 2) as u32;
+        if self.show_col_labels {
+            reserve_space += (max_col_len + 2) as u32;
+        }
+        self.width  as u32 - reserve_space - (max_val as f64).log(10.) as u32 - 3
+    }
 }
