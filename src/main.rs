@@ -36,7 +36,7 @@ fn main() {
 
 
 fn generate_new_data(x: usize, y: usize, max: u32, mut rng: rand::rngs::ThreadRng) -> Vec<Vec<u32>> {
-    let mut new_data: Vec<Vec<u32>> = vec![vec![0;y];x];
+    let mut new_data: Vec<Vec<u32>> = vec![vec![0;x];y];
     let max_val = max;
     for row in 0..new_data.len() {
         for col in 0..new_data[0].len() {
