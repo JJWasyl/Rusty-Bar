@@ -5,7 +5,7 @@ use crossterm::{
 use std::collections::HashMap;
 use std::io::{stdout, Write};
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone)]
 pub struct GraphBuilder<'a> {
     data: Vec<Vec<u32>>,
     labels: &'a [&'a str],
@@ -19,7 +19,11 @@ pub struct GraphBuilder<'a> {
 impl<'a> GraphBuilder<'a> {
     pub fn new() -> GraphBuilder<'a> {
         let builder = GraphBuilder::default();
-        builder.set_width(crossterm::terminal::size().unwrap().0 as usize)
+        builder.set_width(GraphBuilder::max_width())
+    }
+
+    fn max_width()-> usize {
+        return (crossterm::terminal::size().unwrap().0 as usize - 5)
     }
 
     pub fn build(self) -> StaticPlot<'a> {
@@ -63,7 +67,13 @@ impl<'a> GraphBuilder<'a> {
     }
 
     pub fn set_width(mut self, width: usize) -> Self {
-        self.width = width;
+        let termsize = crossterm::terminal::size().unwrap().0 as usize;
+        if (width > termsize){
+            self.width = termsize;
+        }
+        else {
+            self.width = width;
+        }
         self
     }
 
@@ -150,7 +160,7 @@ impl<'a> StaticPlot<'a> {
     }
 
     fn get_graph_height(&self) -> u16 {
-        let mut height = self.data[0].len() * self.data.len();
+        let mut height = self.data[0].len() * self.data.len() + 1;
         if self.show_legend == true {
             height += 1;
         }
