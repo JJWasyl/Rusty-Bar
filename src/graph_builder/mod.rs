@@ -2,7 +2,7 @@ use crossterm::{
     cursor, execute,
     style::{Color, Print, ResetColor, SetForegroundColor},
 };
-use std::collections::HashMap;
+//use std::collections::HashMap;
 use std::io::{stdout, Write};
 
 #[derive(Default, Debug, Clone)]
@@ -22,8 +22,8 @@ impl<'a> GraphBuilder<'a> {
         builder.set_width(GraphBuilder::max_width())
     }
 
-    fn max_width()-> usize {
-        return (crossterm::terminal::size().unwrap().0 as usize - 5)
+    fn max_width() -> usize {
+        return crossterm::terminal::size().unwrap().0 as usize - 5;
     }
 
     pub fn build(self) -> StaticPlot<'a> {
@@ -68,18 +68,19 @@ impl<'a> GraphBuilder<'a> {
 
     pub fn set_width(mut self, width: usize) -> Self {
         let termsize = crossterm::terminal::size().unwrap().0 as usize;
-        if (width > termsize){
+        if width > termsize {
             self.width = termsize;
-        }
-        else {
+        } else {
             self.width = width;
         }
         self
     }
 
+    /*
     pub fn load_hashmap(&'a mut self, map: HashMap<&'a str, &'a [u32]>) -> &'a mut Self {
         todo!();
     }
+    */
 
     pub fn load_2d_vec(
         mut self,
@@ -93,11 +94,9 @@ impl<'a> GraphBuilder<'a> {
         self
     }
 
-    //difficult part
-    pub fn load_1d_array(&'a mut self, array: &'a [u32], label: &'a str) -> &'a mut Self {
-        let mut new_data: Vec<&'a [u32]> = Vec::with_capacity(array.len());
-        new_data.push(array);
-        //self.data = new_data;
+    pub fn load_1d_array(&'a mut self, array: &'a [u32], label: &'a [&'a str]) -> &'a mut Self {
+        self.data = vec![array.to_vec()];
+        self.labels = label;
         self
     }
 }
@@ -174,16 +173,14 @@ impl<'a> StaticPlot<'a> {
                 stdout(),
                 Print(" ".repeat(self.width as usize)),
                 Print("\n")
-            ).unwrap();
+            )
+            .unwrap();
         }
         self.reset_cursor(height as u16);
     }
 
     fn reset_cursor(&self, height: u16) {
-        execute!(
-            stdout(),
-            cursor::MoveToPreviousLine(height),
-        ).unwrap();
+        execute!(stdout(), cursor::MoveToPreviousLine(height),).unwrap();
     }
 
     fn print_label_group(
@@ -209,12 +206,19 @@ impl<'a> StaticPlot<'a> {
                     Color::White,
                 );
             }
-            self.print_bar(self.data[row_idx][i], *cp_iter.next().unwrap(), draw_width, max_val);
-            execute!(stdout(),
-                    Print("\n"),
-                    cursor::RestorePosition,
-                    cursor::MoveDown(1)
-            ).unwrap();
+            self.print_bar(
+                self.data[row_idx][i],
+                *cp_iter.next().unwrap(),
+                draw_width,
+                max_val,
+            );
+            execute!(
+                stdout(),
+                Print("\n"),
+                cursor::RestorePosition,
+                cursor::MoveDown(1)
+            )
+            .unwrap();
         }
         execute!(stdout(), cursor::MoveToNextLine(0)).unwrap();
     }
@@ -237,7 +241,7 @@ impl<'a> StaticPlot<'a> {
     fn print_bar(&self, size: u32, color: Color, draw_width: u32, max_val: u32) {
         let mut draw_size: u32 = size;
         if max_val > draw_width {
-            draw_size = draw_size*draw_width / max_val;
+            draw_size = draw_size * draw_width / max_val;
         }
         execute!(
             stdout(),
