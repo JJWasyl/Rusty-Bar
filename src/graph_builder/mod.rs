@@ -131,7 +131,7 @@ impl<'a> GraphBuilder<'a> {
     }
 
     /// Loads data from an array of u32's
-    pub fn load_1d_array(&'a mut self, array: &'a [u32]) -> &'a mut Self {
+    pub fn load_1d_array(mut self, array: &'a [u32]) -> Self {
         self.data = vec![array.to_vec()];
         self
     }
