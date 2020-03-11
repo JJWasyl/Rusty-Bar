@@ -172,7 +172,6 @@ impl<'a> StaticPlot<'a> {
     pub fn refresh_2d_data(&mut self, new_data: Vec<Vec<u32>>, output: impl Write) {
         self.data = new_data;
         self.reset_cursor(self.get_graph_height());
-        self.clear_space();
         self.print_static(output);
     }
 
@@ -182,7 +181,6 @@ impl<'a> StaticPlot<'a> {
     pub fn refresh_1d_data(&mut self, new_data: Vec<u32>, output: impl Write) {
         self.data = vec![new_data];
         self.reset_cursor(self.get_graph_height());
-        self.clear_space();
         self.print_static(output);
     }
 
@@ -206,6 +204,7 @@ impl<'a> StaticPlot<'a> {
     /// graph.print_static(std::io::stdout());
     /// ```
     pub fn print_static(&self, mut output: impl Write) {
+        self.clear_space();
         let mut max_lab = 0;
         let mut max_col = 0;
 

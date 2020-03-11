@@ -12,7 +12,7 @@ fn main() {
     let labels: &[&str] = &[&"Station1", &"Station2"];
     let columns: &[&str] = &[&"CPU", &"GPU", &"MEMORY"];
 
-    let graph = graph_builder::GraphBuilder::new()
+    let mut graph = graph_builder::GraphBuilder::new()
         .set_colors(&["red", "green", "cyan"])
         .load_2d_vec(data)
         .load_labels(labels)
@@ -23,14 +23,14 @@ fn main() {
 
     let rng = rand::thread_rng();
 
-    /*
+    
     let wait = time::Duration::from_millis(500);
     loop {
         thread::sleep(wait);
         let new_data = generate_new_data(3, 2, 250, rng);
         graph.refresh_2d_data(new_data, stdout());
     }
-    */
+    
 }
 
 fn generate_new_data(
