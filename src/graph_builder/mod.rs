@@ -1,3 +1,6 @@
+//! An implementation of a Graphing library with a plot object and
+//! a client facing builder.
+
 use crossterm::{
     cursor, execute,
     style::{Color, Print, ResetColor, SetForegroundColor},
@@ -5,6 +8,8 @@ use crossterm::{
 //use std::collections::HashMap;
 use std::io::{stdout, Write};
 
+/// A graphbuilding struct holding data and plotting
+/// hyperparameters.
 #[derive(Default, Debug, Clone)]
 pub struct GraphBuilder<'a> {
     data: Vec<Vec<u32>>,
@@ -17,6 +22,14 @@ pub struct GraphBuilder<'a> {
 }
 
 impl<'a> GraphBuilder<'a> {
+    /// Creates a new graphbuilder object with default width set
+    /// to the edge of the current terminal.
+    ///
+    /// ## Example
+    /// ```
+    /// use rusty_bar::graph_builder;
+    /// let mut graph_builder = GraphBuilder::new();
+    /// ```
     pub fn new() -> GraphBuilder<'a> {
         let builder = GraphBuilder::default();
         builder.set_width(GraphBuilder::max_width())
@@ -26,6 +39,15 @@ impl<'a> GraphBuilder<'a> {
         return crossterm::terminal::size().unwrap().0 as usize - 5;
     }
 
+    /// Builds the parametrized graph, any unspecified hyperparameters
+    /// are set to their default values. Returns a StaticPlot struct.
+    ///
+    /// ## Example
+    /// ```
+    /// use  rusty_bar::graph_builder;
+    /// let mut graph_builder = GraphBuilder::new();
+    /// let plot = graph_builder.build();
+    /// ```
     pub fn build(self) -> StaticPlot<'a> {
         StaticPlot {
             data: self.data,
@@ -38,6 +60,10 @@ impl<'a> GraphBuilder<'a> {
         }
     }
 
+    /// Sets the color palette of the graph.
+    ///
+    /// ## Arguments
+    /// 'colors' -> array of string slices with color names in lowercase
     pub fn set_colors(mut self, colors: &'a [&'a str]) -> Self {
         let mut color_palette: Vec<Color> = vec![];
         for &c in colors {
@@ -56,16 +82,20 @@ impl<'a> GraphBuilder<'a> {
         self
     }
 
+    /// Sets the visibility of the color palette legend
     pub fn view_legend(mut self, visible: bool) -> Self {
         self.show_legend = visible;
         self
     }
 
+    /// Sets the visibility of column labels before each individual column
     pub fn view_col_labels(mut self, visible: bool) -> Self {
         self.show_col_labels = visible;
         self
     }
 
+    /// Overrides the default width of the graph. The cap is set to the maximum
+    /// width of the terminal window.
     pub fn set_width(mut self, width: usize) -> Self {
         let termsize = crossterm::terminal::size().unwrap().0 as usize;
         if width > termsize {
@@ -82,27 +112,33 @@ impl<'a> GraphBuilder<'a> {
     }
     */
 
-    pub fn load_2d_vec(
-        mut self,
-        vec: Vec<Vec<u32>>,
-        labels: &'a [&'a str],
-        col_labels: &'a [&'a str],
-    ) -> Self {
+    /// Loads data from a 2D vector of u32's.
+    pub fn load_2d_vec(mut self, vec: Vec<Vec<u32>>) -> Self {
         self.data = vec;
+        self
+    }
+
+    /// Loads the row labels of the graph.
+    pub fn load_labels(mut self, labels: &'a [&'a str]) -> Self {
         self.labels = labels;
+        self
+    }
+
+    /// Loads the column labels of the graph.
+    pub fn load_col_labels(mut self, col_labels: &'a [&'a str]) -> Self {
         self.col_labels = col_labels;
         self
     }
 
-    pub fn load_1d_array(&'a mut self, array: &'a [u32], label: &'a [&'a str]) -> &'a mut Self {
+    /// Loads data from an array of u32's
+    pub fn load_1d_array(&'a mut self, array: &'a [u32]) -> &'a mut Self {
         self.data = vec![array.to_vec()];
-        self.labels = label;
         self
     }
 }
 
-
-
+/// Main Plot struct holding values and hyperparameters. It should be
+/// created using a parent builder.
 pub struct StaticPlot<'a> {
     data: Vec<Vec<u32>>,
     labels: &'a [&'a str],
@@ -114,13 +150,61 @@ pub struct StaticPlot<'a> {
 }
 
 impl<'a> StaticPlot<'a> {
-    pub fn refresh_data(&mut self, new_data: Vec<Vec<u32>>, output: impl Write) {
+    /// Loads a new 2D vector for the graph, resets the graphing area and plots the new
+    /// graph to the designated output stream.
+    ///
+    /// ## Example
+    /// ```
+    /// use rusty_bar::graph_builder;
+    /// let data = vec![vec![100, 250, 170], vec![200, 100, 150]];
+    /// let labels: &[&str] = &[&"Station1", &"Station2"];
+    /// let columns: &[&str] = &[&"CPU", &"GPU", &"MEMORY"];
+    ///
+    /// let mut graph = graph_builder::GraphBuilder::new()
+    ///     .set_colors(&["red", "green", "cyan"])
+    ///     .load_2d_vec(data)
+    ///     .load_labels(labels)
+    ///     .load_col_labels(columns)
+    ///     .view_legend(true)
+    ///     .build();
+    /// graph.refresh_2d_data(vec![vec![100, 200, 300], vec![300, 200, 100]])
+    /// ```
+    pub fn refresh_2d_data(&mut self, new_data: Vec<Vec<u32>>, output: impl Write) {
         self.data = new_data;
         self.reset_cursor(self.get_graph_height());
         self.clear_space();
         self.print_static(output);
     }
 
+    /// Loads a new 1D vector for the graph, resets the graphing area and plots the new
+    /// graph to thhe designated output stream.
+    /// See `refresh_2d_data()` for examples.
+    pub fn refresh_1d_data(&mut self, new_data: Vec<u32>, output: impl Write) {
+        self.data = vec![new_data];
+        self.reset_cursor(self.get_graph_height());
+        self.clear_space();
+        self.print_static(output);
+    }
+
+    /// Prints a static representation of the current StaticPlot struct
+    /// to the designated output stream.
+    ///
+    /// ## Example
+    /// ```
+    /// use rusty_bar::graph_builder;
+    /// let data = vec![vec![100, 250, 170], vec![200, 100, 150]];
+    /// let labels: &[&str] = &[&"Station1", &"Station2"];
+    /// let columns: &[&str] = &[&"CPU", &"GPU", &"MEMORY"];
+    ///
+    /// let mut graph = graph_builder::GraphBuilder::new()
+    ///     .set_colors(&["red", "green", "cyan"])
+    ///     .load_2d_vec(data)
+    ///     .load_labels(labels)
+    ///     .load_col_labels(columns)
+    ///     .view_legend(true)
+    ///     .build();
+    /// graph.print_static(std::io::stdout());
+    /// ```
     pub fn print_static(&self, mut output: impl Write) {
         let mut max_lab = 0;
         let mut max_col = 0;
@@ -156,7 +240,7 @@ impl<'a> StaticPlot<'a> {
                 row_idx,
                 max_lab,
                 max_col,
-                output.by_ref()
+                output.by_ref(),
             );
         }
     }
@@ -169,6 +253,7 @@ impl<'a> StaticPlot<'a> {
         height as u16
     }
 
+    /// Overwrites designated graphing area with whitespaces
     fn clear_space(&self) {
         let height = self.get_graph_height();
         for _ in 0..height {
@@ -186,6 +271,7 @@ impl<'a> StaticPlot<'a> {
         execute!(stdout(), cursor::MoveToPreviousLine(height),).unwrap();
     }
 
+    /// Prints an individual row of data and column labels
     fn print_label_group(
         &self,
         label: &str,
@@ -195,7 +281,11 @@ impl<'a> StaticPlot<'a> {
         mut output: impl Write,
     ) {
         if !label.is_empty() {
-            self.print_label(&self.norm_label(label, max_label_len), Color::White, output.by_ref());
+            self.print_label(
+                &self.norm_label(label, max_label_len),
+                Color::White,
+                output.by_ref(),
+            );
         }
         let mut cp_iter = self.color_palette.iter().cycle();
 
@@ -208,7 +298,7 @@ impl<'a> StaticPlot<'a> {
                 self.print_label(
                     &self.norm_label(self.col_labels[i], max_col_len),
                     Color::White,
-                    output.by_ref()
+                    output.by_ref(),
                 );
             }
             self.print_bar(
@@ -216,7 +306,7 @@ impl<'a> StaticPlot<'a> {
                 *cp_iter.next().unwrap(),
                 draw_width,
                 max_val,
-                output.by_ref()
+                output.by_ref(),
             );
             execute!(
                 output,
@@ -229,6 +319,7 @@ impl<'a> StaticPlot<'a> {
         execute!(stdout(), cursor::MoveToNextLine(0)).unwrap();
     }
 
+    /// Padding for label offset
     fn norm_label(&self, label: &str, max_len: usize) -> String {
         label.to_owned() + &(" ".repeat(max_len - label.len()))
     }
@@ -244,7 +335,15 @@ impl<'a> StaticPlot<'a> {
         .unwrap();
     }
 
-    fn print_bar(&self, size: u32, color: Color, draw_width: u32, max_val: u32, mut output: impl Write) {
+    /// Prints a graph bar to the designated draw width
+    fn print_bar(
+        &self,
+        size: u32,
+        color: Color,
+        draw_width: u32,
+        max_val: u32,
+        mut output: impl Write,
+    ) {
         let mut draw_size: u32 = size;
         if max_val > draw_width {
             draw_size = draw_size * draw_width / max_val;
@@ -279,6 +378,8 @@ impl<'a> StaticPlot<'a> {
         max
     }
 
+    /// Offsets and pads the drawing space  based on presence of labels and magnitude of data
+    /// values.
     fn normalize_draw_space(&self, max_label_len: usize, max_col_len: usize, max_val: u32) -> u32 {
         let mut reserve_space: u32 = (max_label_len + 2) as u32;
         if self.show_col_labels {

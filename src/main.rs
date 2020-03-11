@@ -1,10 +1,10 @@
-use rusty_bar::graph_builder;
-use std::io::{stdout};
 use core::pin::Pin;
 use futures::stream::Stream;
 use futures::task::{Context, Poll};
 use rand;
 use rand::Rng;
+use rusty_bar::graph_builder;
+use std::io::stdout;
 use std::{thread, time};
 
 fn main() {
@@ -15,21 +15,19 @@ fn main() {
 
     let mut graph = graph_builder::GraphBuilder::new()
         .set_colors(&["red", "green", "cyan"])
-        .load_2d_vec(data, labels, columns)
+        .load_2d_vec(data)
+        .load_labels(labels)
+        .load_col_labels(columns)
         .view_legend(true)
         .build();
     graph.print_static(stdout());
-    let wait = time::Duration::from_millis(500);
 
+    let wait = time::Duration::from_millis(500);
     loop {
         thread::sleep(wait);
         let new_data = generate_new_data(3, 2, 250, rng);
-        graph.refresh_data(new_data, stdout());
+        graph.refresh_2d_data(new_data, stdout());
     }
-    /*
-            self.reset_cursor(self.get_graph_height());
-        self.clear_space();
-    */
 }
 
 fn generate_new_data(

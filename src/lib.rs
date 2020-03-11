@@ -1,5 +1,7 @@
-//! An implementation of a histogram-like graph generator
+//! A graphing generator library
 
+#![warn(missing_docs)]
+#[doc(inline)]
 pub mod graph_builder;
 
 // TODOS:
@@ -7,9 +9,9 @@ pub mod graph_builder;
 // 2. Load Hashmap
 // x3. Dynamic printing refresh functionality
 // 4. Demonstrate dyn. graph with futures
-// 5. Documentation
+// x5. Documentation
 // 6. Tests
 // 7. Presentation
-// 8. Replace stdout() with output
+// x8. Replace stdout() with output
 // 9. Account for variable data shapes
 // x10. normalize data and fit to terminal / size
