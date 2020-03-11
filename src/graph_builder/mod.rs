@@ -6,6 +6,7 @@ use crossterm::{
     style::{Color, Print, ResetColor, SetForegroundColor},
 };
 //use std::collections::HashMap;
+use std::fmt;
 use std::io::{stdout, Write};
 
 /// A graphbuilding struct holding data and plotting
@@ -19,6 +20,7 @@ pub struct GraphBuilder<'a> {
     show_legend: bool,
     color_palette: Vec<Color>,
     width: usize,
+    val_cap: Option<u32>,
 }
 
 impl<'a> GraphBuilder<'a> {
@@ -57,6 +59,7 @@ impl<'a> GraphBuilder<'a> {
             show_col_labels: self.show_col_labels,
             show_legend: self.show_legend,
             color_palette: self.color_palette.to_owned(),
+            val_cap: self.val_cap,
         }
     }
 
@@ -79,6 +82,12 @@ impl<'a> GraphBuilder<'a> {
             }
         }
         self.color_palette = color_palette;
+        self
+    }
+
+    /// Sets the maximum value cap for the graph
+    pub fn set_max_val(mut self, val: u32) -> Self {
+        self.val_cap = Some(val);
         self
     }
 
@@ -147,6 +156,7 @@ pub struct StaticPlot<'a> {
     show_col_labels: bool,
     show_legend: bool,
     color_palette: Vec<Color>,
+    val_cap: Option<u32>,
 }
 
 impl<'a> StaticPlot<'a> {
@@ -344,6 +354,9 @@ impl<'a> StaticPlot<'a> {
         mut output: impl Write,
     ) {
         let mut draw_size: u32 = size;
+        if size > max_val {
+            draw_size = max_val;
+        }
         if max_val > draw_width {
             draw_size = draw_size * draw_width / max_val;
         }
@@ -366,15 +379,20 @@ impl<'a> StaticPlot<'a> {
     }
 
     fn find_max_val(&self) -> u32 {
-        let mut max = 0;
-        for row in &self.data {
-            for &val in row {
-                if val > max {
-                    max = val;
+        match self.val_cap {
+            Some(val) => val,
+            None => {
+                let mut max = 0;
+                for row in &self.data {
+                    for &val in row {
+                        if val > max {
+                            max = val;
+                        }
+                    }
                 }
+                max
             }
         }
-        max
     }
 
     /// Offsets and pads the drawing space  based on presence of labels and magnitude of data
@@ -384,6 +402,7 @@ impl<'a> StaticPlot<'a> {
         if self.show_col_labels {
             reserve_space += (max_col_len + 2) as u32;
         }
-        self.width as u32 - reserve_space - (max_val as f64).log(10.) as u32 - 3
+        let number_length = (max_val as f64).log(10.) as u32;
+        self.width as u32 - reserve_space - number_length - 3
     }
 }
