@@ -1,5 +1,5 @@
 use rusty_bar::graph_builder;
-//use std::io::{stdout, Write};
+use std::io::{stdout};
 use core::pin::Pin;
 use futures::stream::Stream;
 use futures::task::{Context, Poll};
@@ -18,13 +18,13 @@ fn main() {
         .load_2d_vec(data, labels, columns)
         .view_legend(true)
         .build();
-    graph.print_static();
+    graph.print_static(stdout());
     let wait = time::Duration::from_millis(500);
 
     loop {
         thread::sleep(wait);
         let new_data = generate_new_data(3, 2, 250, rng);
-        graph.refresh_data(new_data);
+        graph.refresh_data(new_data, stdout());
     }
     /*
             self.reset_cursor(self.get_graph_height());

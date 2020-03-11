@@ -101,6 +101,8 @@ impl<'a> GraphBuilder<'a> {
     }
 }
 
+
+
 pub struct StaticPlot<'a> {
     data: Vec<Vec<u32>>,
     labels: &'a [&'a str],
@@ -112,14 +114,14 @@ pub struct StaticPlot<'a> {
 }
 
 impl<'a> StaticPlot<'a> {
-    pub fn refresh_data(&mut self, new_data: Vec<Vec<u32>>) {
+    pub fn refresh_data(&mut self, new_data: Vec<Vec<u32>>, output: impl Write) {
         self.data = new_data;
         self.reset_cursor(self.get_graph_height());
         self.clear_space();
-        self.print_static();
+        self.print_static(output);
     }
 
-    pub fn print_static(&self) {
+    pub fn print_static(&self, mut output: impl Write) {
         let mut max_lab = 0;
         let mut max_col = 0;
 
@@ -135,10 +137,10 @@ impl<'a> StaticPlot<'a> {
             if self.show_col_labels {
                 offset += max_col + 2;
             }
-            execute!(stdout(), Print(" ".repeat(offset)),).unwrap();
+            execute!(output, Print(" ".repeat(offset)),).unwrap();
             for col_label in self.col_labels {
                 execute!(
-                    stdout(),
+                    output,
                     Print(String::from(*col_label) + &" "),
                     SetForegroundColor(*cp_iter.next().unwrap()),
                     Print(self.generate_bar(1) + &" ".repeat(4)),
@@ -146,7 +148,7 @@ impl<'a> StaticPlot<'a> {
                 )
                 .unwrap()
             }
-            execute!(stdout(), Print("\n"),).unwrap();
+            execute!(output, Print("\n"),).unwrap();
         }
         for (row_idx, _) in self.data.iter().enumerate() {
             self.print_label_group(
@@ -154,6 +156,7 @@ impl<'a> StaticPlot<'a> {
                 row_idx,
                 max_lab,
                 max_col,
+                output.by_ref()
             );
         }
     }
@@ -189,9 +192,10 @@ impl<'a> StaticPlot<'a> {
         row_idx: usize,
         max_label_len: usize,
         max_col_len: usize,
+        mut output: impl Write,
     ) {
         if !label.is_empty() {
-            self.print_label(&self.norm_label(label, max_label_len), Color::White);
+            self.print_label(&self.norm_label(label, max_label_len), Color::White, output.by_ref());
         }
         let mut cp_iter = self.color_palette.iter().cycle();
 
@@ -199,11 +203,12 @@ impl<'a> StaticPlot<'a> {
         let draw_width = self.normalize_draw_space(max_label_len, max_col_len, max_val);
 
         for i in 0..self.data[row_idx].len() {
-            execute!(stdout(), cursor::SavePosition,).unwrap();
+            execute!(output, cursor::SavePosition,).unwrap();
             if self.show_col_labels {
                 self.print_label(
                     &self.norm_label(self.col_labels[i], max_col_len),
                     Color::White,
+                    output.by_ref()
                 );
             }
             self.print_bar(
@@ -211,9 +216,10 @@ impl<'a> StaticPlot<'a> {
                 *cp_iter.next().unwrap(),
                 draw_width,
                 max_val,
+                output.by_ref()
             );
             execute!(
-                stdout(),
+                output,
                 Print("\n"),
                 cursor::RestorePosition,
                 cursor::MoveDown(1)
@@ -227,9 +233,9 @@ impl<'a> StaticPlot<'a> {
         label.to_owned() + &(" ".repeat(max_len - label.len()))
     }
 
-    fn print_label(&self, label: &str, color: Color) {
+    fn print_label(&self, label: &str, color: Color, mut output: impl Write) {
         execute!(
-            stdout(),
+            output,
             SetForegroundColor(color),
             Print(label),
             Print(": "),
@@ -238,13 +244,13 @@ impl<'a> StaticPlot<'a> {
         .unwrap();
     }
 
-    fn print_bar(&self, size: u32, color: Color, draw_width: u32, max_val: u32) {
+    fn print_bar(&self, size: u32, color: Color, draw_width: u32, max_val: u32, mut output: impl Write) {
         let mut draw_size: u32 = size;
         if max_val > draw_width {
             draw_size = draw_size * draw_width / max_val;
         }
         execute!(
-            stdout(),
+            output,
             SetForegroundColor(color),
             Print(self.generate_bar(draw_size)),
             Print(format!(" {}", size)),
